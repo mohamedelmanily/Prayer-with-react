@@ -19,11 +19,13 @@ h1{
 h2{
   font-family: "IBM Plex Sans Arabic", sans-serif;
   font-weight: 200 !important;
+  font-size: 25px;
 }
 h3{
+  color:#546e79;
   margin: 0;
   font-family: "IBM Plex Sans Arabic", sans-serif;
-  font-size: 40px;
+  font-size: 37px;
   font-weight: 300 !important ;
 }
 .MuiSelect-select,.MuiInputBase-root{

@@ -15,7 +15,7 @@ export default function Prayer({ name, time, src }) {
         />
         <CardContent>
           <h1>{name}</h1>
-          <h3 style={{color:'#88aec1'}}>
+          <h3>
             {time}
           </h3>
         </CardContent>

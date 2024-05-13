@@ -15,6 +15,7 @@ import Select from "@mui/material/Select";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import StyledDivider from "./divider";
+import moment from "moment";
 
 export default function MainContent() {
   const AvailableCities = [
@@ -65,7 +66,7 @@ export default function MainContent() {
         `https://api.aladhan.com/v1/timingsByCity/10-05-2024?country=egypt&city=${city.apiName}`
       );
       setTiming(response.data.data.timings);
-      console.log(response.data);
+      // console.log(response.data);
     } catch (error) {
       console.error("Error fetching prayer timings:", error);
       // Handle error gracefully, e.g., display an error message
@@ -82,9 +83,10 @@ function timeToMinutes(time) {
 // تحويل الدقائق إلى الصيغة HH:MM
 function minutesToTime(minutes) {
   const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
+  const mins = Math.floor(minutes % 60);
   return `${hours < 10 ? "0" : ""}${hours}:${mins < 10 ? "0" : ""}${mins}`;
 }
+
 
 // الحصول على الوقت الحالي بالدقائق
 const now = new Date();
@@ -103,12 +105,17 @@ const prayerTimesInMinutes = {
 const [pray,setnextpray]=useState('')
 const [pTime,setPtime]=useState('')
 let nextPrayerTime = null;
-function getNextPray(){
-
-  
+// العثور على الصلاة القادمة
+function getNextPray(){ 
   for (const [prayer, time] of Object.entries(prayerTimesInMinutes)) {
+
     if (time > currentTimeInMinutes) {
-      setnextpray ( prayer)
+      if(prayer=='fajr'){
+        console.log('ok');
+        moment('2016-10-30').isBetween('2016-10-30', '2016-12-30', undefined, '()');
+
+      }
+      setnextpray(prayer);
       nextPrayerTime = time;
       break;
     }
@@ -120,23 +127,25 @@ function getNextPray(){
   // تحويل الوقت المتبقي إلى الصيغة HH:MM
   const remainingTimeInHHMM = minutesToTime(remainingTime);
   setPtime(remainingTimeInHHMM)
-  console.log(`الوقت المتبقي حتى صلاة ${pray}: ${pTime}`);
+  // console.log(`الوقت المتبقي حتى صلاة ${pray}: ${pTime}`);
   setTimeout(getNextPray, 60000)
-  
 }
+
 
   useEffect(() => {
 
     const updateDate = () => {
       const date = new Date();
-      const formattedDate = `${date.getDate()} / ${date.getMonth()} / ${date.getFullYear()} | ${date.getHours() < 10 ? "0" : ""}${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}`;
+      const formattedDate = `${date.getDate()} / ${date.getMonth()} / ${date.getFullYear()} 
+      | ${date.getHours() < 10 ? "0" : ""}${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}:${date.getSeconds() < 10 ? "0" : ""}${date.getSeconds()}`;
       setCurrentDate(formattedDate);
-      setTimeout(updateDate, 60000); // Update the date every minute (60000 milliseconds)
+      setTimeout(updateDate, 1000); // Update the date every minute (60000 milliseconds)
     };
     getNextPray()
     getTiming();
     updateDate(); // Initial update
   }, [city, currentDate,pTime]);
+
 
   function returning(p){
     if(p=='Fajr'){

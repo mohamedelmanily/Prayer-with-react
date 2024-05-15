@@ -16,6 +16,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import StyledDivider from "./divider";
 import moment from "moment";
+import "moment/dist/locale/ar";
 
 export default function MainContent() {
   const AvailableCities = [
@@ -44,8 +45,14 @@ export default function MainContent() {
       apiName: "aswan",
     },
   ];
+  const prayersArray = [
+    { key: "Fajr", displayName: "الفجر" },
+    { key: "Dhuhr", displayName: "الظهر" },
+    { key: "Asr", displayName: "العصر" },
+    { key: "Maghrib", displayName: "المغرب" },
+    { key: "Isha", displayName: "العشاء" },
+  ];
   const [currentDate, setCurrentDate] = useState("");
-
   const [timing, setTiming] = useState({
     Asr: "16:28",
     Dhuhr: "12:51",
@@ -57,6 +64,8 @@ export default function MainContent() {
     displayName: "القاهرة",
     apiName: "cairo",
   });
+  const [prayerIndex, setPrayerIndex] = useState(0);
+  const [remainTime, setRemainTime] = useState("");
   function handleCityChange(event) {
     setCity(AvailableCities.find((e) => e.apiName == event.target.value));
   }
@@ -73,100 +82,85 @@ export default function MainContent() {
     }
   }
 
-
-// تحويل الوقت من الصيغة HH:MM إلى دقائق
-function timeToMinutes(time) {
-  const [hours, minutes] = time.split(":");
-  return parseInt(hours, 10) * 60 + parseInt(minutes, 10);
-}
-
-// تحويل الدقائق إلى الصيغة HH:MM
-function minutesToTime(minutes) {
-  const hours = Math.floor(minutes / 60);
-  const mins = Math.floor(minutes % 60);
-  return `${hours < 10 ? "0" : ""}${hours}:${mins < 10 ? "0" : ""}${mins}`;
-}
-
-
-// الحصول على الوقت الحالي بالدقائق
-const now = new Date();
-const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
-
-// أوقات الصلاة بالدقائق
-const prayerTimesInMinutes = {
-  Fajr: timeToMinutes(timing.Fajr),
-  Dhuhr: timeToMinutes(timing.Dhuhr),
-  Asr: timeToMinutes(timing.Asr),
-  Maghrib: timeToMinutes(timing.Maghrib),
-  Isha: timeToMinutes(timing.Isha),
-};
-
-// العثور على الصلاة القادمة
-const [pray,setnextpray]=useState('')
-const [pTime,setPtime]=useState('')
-let nextPrayerTime = null;
-// العثور على الصلاة القادمة
-function getNextPray(){ 
-  for (const [prayer, time] of Object.entries(prayerTimesInMinutes)) {
-
-    if (time > currentTimeInMinutes) {
-      if(prayer=='fajr'){
-        console.log('ok');
-        moment('2016-10-30').isBetween('2016-10-30', '2016-12-30', undefined, '()');
-
-      }
-      setnextpray(prayer);
-      nextPrayerTime = time;
-      break;
-    }
-  }
-  
-  // حساب الوقت المتبقي حتى الصلاة القادمة
-  const remainingTime = nextPrayerTime - currentTimeInMinutes;
-  
-  // تحويل الوقت المتبقي إلى الصيغة HH:MM
-  const remainingTimeInHHMM = minutesToTime(remainingTime);
-  setPtime(remainingTimeInHHMM)
-  // console.log(`الوقت المتبقي حتى صلاة ${pray}: ${pTime}`);
-  setTimeout(getNextPray, 60000)
-}
-
-
   useEffect(() => {
+    getTiming();
 
     const updateDate = () => {
-      const date = new Date();
-      const formattedDate = `${date.getDate()} / ${date.getMonth()} / ${date.getFullYear()} 
-      | ${date.getHours() < 10 ? "0" : ""}${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}:${date.getSeconds() < 10 ? "0" : ""}${date.getSeconds()}`;
-      setCurrentDate(formattedDate);
-      setTimeout(updateDate, 1000); // Update the date every minute (60000 milliseconds)
+      setCurrentDate(moment().format(" Do MMMM YYYY || h:mm:ss a"));
     };
-    getNextPray()
-    getTiming();
-    updateDate(); // Initial update
-  }, [city, currentDate,pTime]);
 
+    setInterval(updateDate, 1000);
+    const intervalId = setInterval(() => {
+      CalcRemainingTime();
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [city]);
 
-  function returning(p){
-    if(p=='Fajr'){
-      return 'الفجر'
+  function CalcRemainingTime() {
+    const currentTime = moment();
+    const fajrTime = moment(timing["Fajr"], " hh:mm");
+    const duhrTime = moment(timing["Dhuhr"], " hh:mm");
+    const asrTime = moment(timing["Asr"], " hh:mm");
+    const maghribTime = moment(timing["Maghrib"], " hh:mm");
+    const ishaTime = moment(timing["Isha"], " hh:mm");
+
+    let nextPrayerIndex = null;
+    if (moment(currentTime).isBetween(fajrTime, duhrTime)) {
+      console.log("duhr is next");
+      nextPrayerIndex = 1;
+    } else if (moment(currentTime).isBetween(duhrTime, asrTime)) {
+      console.log("asr is next");
+      nextPrayerIndex = 2;
+    } else if (moment(currentTime).isBetween(asrTime, maghribTime)) {
+      console.log("maghrib is next");
+      nextPrayerIndex = 3;
+    } else if (moment(currentTime).isBetween(maghribTime, ishaTime)) {
+      console.log("isha is next");
+      nextPrayerIndex = 4;
+    } else {
+      console.log("fajr is next");
+      nextPrayerIndex = 0;
     }
-    if(p=='Dhuhr'){
-      return 'الظهر'
+    setPrayerIndex(nextPrayerIndex);
+    //handling remaining time by prayer index
+    const nextPrayerObject = prayersArray[nextPrayerIndex];
+    const nextPrayerTime = timing[nextPrayerObject.key];
+
+    let remaingTime = moment(nextPrayerTime, "hh:mm").diff(currentTime);
+
+    if(remaingTime<0){
+      const midNightDiff=moment('23:59:59','hh:mm:ss').diff(currentTime)
+      const fajrMidDiff=moment(nextPrayerTime,'hh:mm:ss').diff(moment('00:00:00','hh:mm:ss'))
+    remaingTime=midNightDiff+fajrMidDiff
     }
-    if(p=='Asr'){
-      return 'العصر'
-    }
-    if(p=='Maghrib'){
-      return 'المغرب'
-    }
-    if(p=='Isha'){
-      return 'العشاء'
-    }
+
+    const ReadableRemaingTime = moment.duration(remaingTime);
+    const x = `${
+      ReadableRemaingTime.hours() < 10 ? "0" : ""
+    }${ReadableRemaingTime.hours()}:${
+      ReadableRemaingTime.minutes() < 10 ? "0" : ""
+    }${ReadableRemaingTime.minutes()}:${
+      ReadableRemaingTime.seconds() < 10 ? "0" : ""
+    }${ReadableRemaingTime.seconds()}`;
+
+    console.log(
+      ReadableRemaingTime.hours(),
+      ReadableRemaingTime.minutes(),
+      ReadableRemaingTime.seconds()
+    );
+    setRemainTime(x)
   }
+
   return (
     <>
-      <Box sx={{ fontSize: "24px", fontWeight: "500", marginBottom: "40px" }}>
+      <Box
+        sx={{
+          fontSize: "24px",
+          fontWeight: "500",
+          marginBottom: "40px",
+          textShadow: "0 0 10px white",
+        }}
+      >
         ﴿وَأَقِمِ الصَّلَاةَ طَرَفَيِ النَّهَارِ وَزُلَفًا مِنَ اللَّيْلِ إِنَّ
         الْحَسَنَاتِ يُذْهِبْنَ السَّيِّئَاتِ ذَلِكَ ذِكْرَى لِلذَّاكِرِينَ﴾
       </Box>
@@ -175,12 +169,12 @@ function getNextPray(){
       <StyledDivider width="10%" marginTop="5px" />
       <Grid container spacing={2} style={{ fontWeight: "900" }}>
         <Grid xs={6}>
-          <h2 > {currentDate}</h2>
+          <h2> {currentDate}</h2>
           <h1>{city.displayName}</h1>
         </Grid>
         <Grid xs={6}>
-          <h2> متبقي حتي صلاة {returning(pray)}</h2>
-          <h1>{pTime}</h1>
+          <h2>متبقي حتي صلاة {prayersArray[prayerIndex].displayName}</h2>
+          <h1>{remainTime}</h1>
         </Grid>
       </Grid>
       <Divider

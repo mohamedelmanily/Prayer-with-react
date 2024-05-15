@@ -106,19 +106,14 @@ export default function MainContent() {
 
     let nextPrayerIndex = null;
     if (moment(currentTime).isBetween(fajrTime, duhrTime)) {
-      console.log("duhr is next");
       nextPrayerIndex = 1;
     } else if (moment(currentTime).isBetween(duhrTime, asrTime)) {
-      console.log("asr is next");
       nextPrayerIndex = 2;
     } else if (moment(currentTime).isBetween(asrTime, maghribTime)) {
-      console.log("maghrib is next");
       nextPrayerIndex = 3;
     } else if (moment(currentTime).isBetween(maghribTime, ishaTime)) {
-      console.log("isha is next");
       nextPrayerIndex = 4;
     } else {
-      console.log("fajr is next");
       nextPrayerIndex = 0;
     }
     setPrayerIndex(nextPrayerIndex);
@@ -143,11 +138,7 @@ export default function MainContent() {
       ReadableRemaingTime.seconds() < 10 ? "0" : ""
     }${ReadableRemaingTime.seconds()}`;
 
-    console.log(
-      ReadableRemaingTime.hours(),
-      ReadableRemaingTime.minutes(),
-      ReadableRemaingTime.seconds()
-    );
+
     setRemainTime(x)
   }
 
